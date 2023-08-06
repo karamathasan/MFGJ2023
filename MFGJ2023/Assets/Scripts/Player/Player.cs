@@ -8,13 +8,22 @@ public class Player : MonoBehaviour
     [SerializeField] float m_jumpForce = 7.5f;
     float HP = 100;
 
+    private float hopTimer = 0;
+    private float shorthopTimerThres = 0.1f;
+    private bool m_grounded = false;
+
     private Animator m_animator;
     private Rigidbody2D m_body2d;
     public Sensor sensor;
-    private bool m_grounded = false;
 
-    private float hopTimer = 0;
-    private float shorthopTimerThres = 0.1f;
+    public bool dodgeAcquired;
+    public bool canDodge = true;
+    public bool dashAcquired;
+    private bool canDash = true;
+    public bool counterAcquired;
+    private bool canCounter;
+
+    public bool invincibility = false;
 
     // Use this for initialization
     void Start()
@@ -27,6 +36,9 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
+
+
         //Check if character just landed on the ground
         if (!m_grounded && sensor.Grounded())
         {
@@ -56,12 +68,6 @@ public class Player : MonoBehaviour
         //Set AirSpeed in animator
         //m_animator.SetFloat("AirSpeed", m_body2d.velocity.y);
 
-        // -- Handle Animations --
-
-        //Hurt
-        //else if (Input.GetKeyDown("q"))
-        //    m_animator.SetTrigger("Hurt");
-
         //Attack
         if (Input.GetKeyDown("j"))
         {
@@ -82,18 +88,47 @@ public class Player : MonoBehaviour
             Jump();
             hopTimer = 0;
         }
+        else if (dodgeAcquired && canDodge && Input.GetKeyDown("l"))
+        {
+            //invincibility = true;
+            StartCoroutine(Dodge());
+        }
+        else if (counterAcquired && canCounter && Input.GetKeyDown("h"))
+        {
+            //invincibility = true;
+            //StartCoroutine(Dodge());
+        }
+        else if (dashAcquired && canDash && (Input.GetKeyDown("l") && Mathf.Abs(m_body2d.velocity.x) > 1))
+        {
+            //invincibility = true;
+            //StartCoroutine(Dodge());
+        }
+    }
+    /// 1 dodge
+    /// 2 dash
+    ///  block
+    ///  counter
+    private IEnumerator Dodge()
+    {
+        invincibility = true;
+        canDodge = false;
+        m_animator.SetInteger("ActionID", 1);
+        yield return new WaitForSeconds(0.5f);
+        invincibility = false;
+        m_animator.SetInteger("ActionID", 0);
+        yield return new WaitForSeconds(1f);
+        canDodge = true;
+
     }
     public void Jump()
     {
-        m_animator.SetTrigger("Jump");
         m_grounded = false;
         m_animator.SetBool("Grounded", m_grounded);
         if (hopTimer > shorthopTimerThres)
         {
             m_body2d.velocity = new Vector2(m_body2d.velocity.x, m_jumpForce);
         }
-        else m_body2d.velocity = new Vector2(m_body2d.velocity.x, m_jumpForce / 2);
-
+        else m_body2d.velocity = new Vector2(m_body2d.velocity.x, m_jumpForce / 1.4f);
     }
 
 }
