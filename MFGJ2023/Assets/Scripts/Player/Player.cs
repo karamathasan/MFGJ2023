@@ -5,7 +5,7 @@ public class Player : MonoBehaviour
 {
 
     [SerializeField] float m_speed = 4.0f;
-    [SerializeField] float m_jumpForce = 7.5f;
+    [SerializeField] float m_jumpForce = 9.5f;
     float HP = 100;
 
     private float hopTimer = 0;
@@ -14,7 +14,8 @@ public class Player : MonoBehaviour
 
     private Animator m_animator;
     private Rigidbody2D m_body2d;
-    public Sensor sensor;
+    [SerializeField]
+    Sensor sensor;
 
     public bool dodgeAcquired;
     public bool canDodge = true;
@@ -26,7 +27,7 @@ public class Player : MonoBehaviour
     public bool invincibility = false;
 
     // Use this for initialization
-    void Start()
+    void Awake()
     {
         m_animator = GetComponent<Animator>();
         m_body2d = GetComponent<Rigidbody2D>();
@@ -34,11 +35,15 @@ public class Player : MonoBehaviour
     }
 
     // Update is called once per frame
+    void FixedUpdate()
+    {
+        if (!m_grounded)
+        {
+            m_body2d.AddForce(new Vector2(0, -6));
+        }
+    }
     void Update()
     {
-
-
-
         //Check if character just landed on the ground
         if (!m_grounded && sensor.Grounded())
         {
@@ -53,6 +58,7 @@ public class Player : MonoBehaviour
             m_animator.SetBool("Grounded", m_grounded);
         }
 
+
         // -- Handle input and movement --
         float inputX = Input.GetAxis("Horizontal");
 
@@ -63,7 +69,8 @@ public class Player : MonoBehaviour
             transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
 
         // Move
-        m_body2d.velocity = new Vector2(inputX * m_speed, m_body2d.velocity.y);
+        Walk();
+        //m_body2d.velocity = new Vector2(inputX * m_speed, m_body2d.velocity.y);
 
         //Set AirSpeed in animator
         //m_animator.SetFloat("AirSpeed", m_body2d.velocity.y);
@@ -103,6 +110,15 @@ public class Player : MonoBehaviour
             //invincibility = true;
             //StartCoroutine(Dodge());
         }
+    }
+    private void Walk()
+    {
+        //m_body2d.velocity = new Vector2(Input.GetAxis("Horizontal") * m_speed, m_body2d.velocity.y);
+
+        float targetSpeed = m_speed * (Input.GetAxisRaw("Horizontal"));
+        float error = targetSpeed - m_body2d.velocity.x;
+        float propTerm = error * 1f;
+        m_body2d.AddForce(propTerm * Vector2.right, ForceMode2D.Force);
     }
     /// 1 dodge
     /// 2 dash
