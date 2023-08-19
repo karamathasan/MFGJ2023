@@ -14,6 +14,8 @@ public class TestEnemy : MonoBehaviour
     private bool m_combatIdle = false;
     private bool m_isDead = false;
     [SerializeField]
+    private float hp = 50;
+    [SerializeField]
     private float aggression = 1;
     private float maxStamina = 10;
     [SerializeField]
@@ -31,6 +33,7 @@ public class TestEnemy : MonoBehaviour
         attack = 1,
         distancing = 2
     }
+    [SerializeField]
     private int currentState = 0;
 
     // Use this for initialization
@@ -110,14 +113,13 @@ public class TestEnemy : MonoBehaviour
     }
     private void Attack()
     {
-        //Debug.Log("attacking");
         m_animator.SetTrigger("Attack");
         currentState = (int)States.attack;
         if (stamina - 3 > 0)
         {
             stamina -= 3;
         }
-        currentState = -1;
+        currentState = -1;//the attack animation puts the enemy back into the attacking state to avoid never completing the animation
     }
     public void EndAttack()
     {
@@ -191,6 +193,23 @@ public class TestEnemy : MonoBehaviour
             stamina += Time.deltaTime;
         }
 
+    }
+    public void TakeHit(float damage)
+    {
+        m_animator.SetTrigger("Hurt");
+        hp -= damage;
+        currentState = (int)States.distancing;
+        Die();
+    }
+    private void Die()
+    {
+        if (hp <= 0)
+        {
+            //m_animator.SetTrigger("Hurt");
+            m_animator.SetTrigger("Death");
+            currentState = -1;
+            Destroy(this);
+        }
     }
 }
 

@@ -13,17 +13,23 @@ public class Player : MonoBehaviour
     private bool m_grounded = false;
 
     private Animator m_animator;
+    [SerializeField]
     private Rigidbody2D m_body2d;
     [SerializeField]
     Sensor sensor;
 
+
     public bool dodgeAcquired;
     public bool canDodge = true;
+    [SerializeField]
     public bool dashAcquired;
+    [SerializeField]
     private bool canDash = true;
+    [SerializeField]
     public bool counterAcquired;
     private bool canCounter;
 
+    public bool preformingAction = false;
     public bool invincibility = false;
 
     // Use this for initialization
@@ -63,9 +69,9 @@ public class Player : MonoBehaviour
         float inputX = Input.GetAxis("Horizontal");
 
         // Swap direction of sprite depending on walk direction
-        if (inputX < 0)
+        if (inputX < 0 && !preformingAction)
             transform.localScale = new Vector3(-1.0f, 1.0f, 1.0f);
-        else if (inputX > 0)
+        else if (inputX > 0 && !preformingAction)
             transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
 
         // Move
@@ -95,25 +101,29 @@ public class Player : MonoBehaviour
             Jump();
             hopTimer = 0;
         }
-        else if (dodgeAcquired && canDodge && Input.GetKeyDown("l"))
+        else if (dodgeAcquired && canDodge && !preformingAction && Input.GetKeyDown("l"))
         {
             //invincibility = true;
             StartCoroutine(Dodge());
         }
-        else if (counterAcquired && canCounter && Input.GetKeyDown("h"))
+        else if (counterAcquired && canCounter && !preformingAction && Input.GetKeyDown("h"))
         {
             //invincibility = true;
             //StartCoroutine(Dodge());
         }
-        else if (dashAcquired && canDash && (Input.GetKeyDown("l") && Mathf.Abs(m_body2d.velocity.x) > 1))
+        else if (dashAcquired && canDash && !preformingAction && (Input.GetKeyDown("l") && Mathf.Abs(m_body2d.velocity.x) > 1))
         {
             //invincibility = true;
-            //StartCoroutine(Dodge());
+            StartCoroutine(Dash());
         }
     }
     private void Walk()
     {
         //m_body2d.velocity = new Vector2(Input.GetAxis("Horizontal") * m_speed, m_body2d.velocity.y);
+        if (preformingAction)
+        {
+            return;
+        }
 
         float targetSpeed = m_speed * (Input.GetAxisRaw("Horizontal"));
         float error = targetSpeed - m_body2d.velocity.x;
@@ -128,12 +138,31 @@ public class Player : MonoBehaviour
     {
         invincibility = true;
         canDodge = false;
+        preformingAction = true;
         m_animator.SetInteger("ActionID", 1);
         yield return new WaitForSeconds(0.5f);
         invincibility = false;
         m_animator.SetInteger("ActionID", 0);
         yield return new WaitForSeconds(1f);
         canDodge = true;
+
+    }
+    private IEnumerator Dash()
+    {
+        float originalGravity = m_body2d.gravityScale;
+        canDash = false;
+        preformingAction = true;
+        m_body2d.gravityScale = 0;
+        //Vector2 force = new Vector2(m_body2d.transform.localScale.x * 12, 0);
+        m_body2d.velocity = new Vector2(m_body2d.transform.localScale.x * 12, 0);
+        //m_body2d.AddForce(force, ForceMode2D.Impulse);
+        //m_body2d.AddForce(force);
+        yield return new WaitForSeconds(1f);
+        preformingAction = false;
+        m_body2d.gravityScale = originalGravity;
+        yield return new WaitForSeconds(0.5f);
+        
+        canDash = true;
 
     }
     public void Jump()
@@ -147,4 +176,23 @@ public class Player : MonoBehaviour
         else m_body2d.velocity = new Vector2(m_body2d.velocity.x, m_jumpForce / 1.4f);
     }
 
+    //utility
+    public float getDirection()
+    {
+        return m_body2d.transform.localScale.x;
+    }
+    public Vector2 getPosition()
+    {
+        return m_body2d.transform.position;
+    }
+
+    public void TakeHit(float damage)
+    {
+        m_animator.SetTrigger("Hurt");
+        HP -= damage;
+        if (HP <= 0)
+        {
+            //death code
+        }
+    }
 }
